@@ -153,13 +153,12 @@ def run_one_epoch(
             images = images.to(device)
             predictions = model(images)
 
-            target = torch.zeros_like(predictions)
-            target[np.arange(images.size(0)), labels] = 1
+            target = labels
             target = target.to(device)
 
             loss = criterion(predictions, target)
             mean_loss += loss.item()
-            predictions = predictions.max(dim=-1)[1].cpu().detach().numpy()
+            predictions = predictions.argmax(dim=-1).cpu().detach().numpy()
             labels = labels.numpy()
             pred_labels.extend(list(predictions))
             gt_labels.extend(list(labels))
