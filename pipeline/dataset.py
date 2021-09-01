@@ -106,6 +106,8 @@ def training_augmentation(img_size: Tuple[int, int] = IMG_SIZE) -> Callable:
     train_transform = [
         albu.ImageCompression(quality_lower=60, quality_upper=100),
         albu.GaussNoise(p=0.1),
+        albu.augmentations.crops.transforms.CropAndPad(px=5),
+        albu.RandomBrightnessContrast(p=0.5),
         albu.Resize(img_size[0], img_size[1]),
     ]
     return albu.Compose(train_transform)
