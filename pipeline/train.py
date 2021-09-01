@@ -93,7 +93,7 @@ def train_initialization(
     exp_path = get_and_make_train_dir(exp_name, class2label)
     model = SignsClassifier(model_name, len(class2label))
     model.to(device)
-    criterion = nn.BCEWithLogitsLoss()
+    criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     return model, class2label, exp_path, criterion, optimizer
 
