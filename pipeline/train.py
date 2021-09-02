@@ -94,7 +94,7 @@ def train_initialization(
     model = SignsClassifier(model_name, len(class2label))
     model.to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    optimizer = torch.optim.RMSprop(model.parameters(), lr=1e-3)
     return model, class2label, exp_path, criterion, optimizer
 
 
