@@ -23,7 +23,7 @@ ENCODERS = {
     },
     'efficientnet_b0': {
         'features': 1280,
-        'init_op': partial(efficientnet_b0, pretrained=True),
+        'init_op': partial(efficientnet_b0, pretrained=True, drop_connect = 0.2),
     },
 }
 
@@ -33,7 +33,7 @@ class SignsClassifier(nn.Module):
     A model for classifying signs.
     """
 
-    def __init__(self, encoder_name: str, n_classes: int, dropout_rate: float = 0.3):
+    def __init__(self, encoder_name: str, n_classes: int, dropout_rate: float = 0.2):
         """Initializing the class.
 
         :param encoder_name: name of the network encoder
