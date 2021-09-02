@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from torch.nn.modules.dropout import Dropout
 from torch.nn.modules.linear import Linear
-from torch.nn.modules.pooling import AdaptiveAvgPool2d, MaxPool2d
+from torch.nn.modules.pooling import AdaptiveAvgPool2d
 from timm.models.resnet import resnet18, resnet34, resnet50
 from timm.models.efficientnet import efficientnet_b0
 
@@ -21,9 +21,9 @@ ENCODERS = {
         'features': 2048,
         'init_op': partial(resnet50, pretrained=True),
     },
-    'efficientnet_b0': {
+    'efficientnet': {
         'features': 1280,
-        'init_op': partial(efficientnet_b0, pretrained=True, drop_connect = 0.2),
+        'init_op': partial(efficientnet_b0, pretrained=True),
     },
 }
 
@@ -42,7 +42,7 @@ class SignsClassifier(nn.Module):
         """
         super().__init__()
         self.encoder = ENCODERS[encoder_name]['init_op']()
-        self.avg_pool = MaxPool2d(8)
+        self.avg_pool = AdaptiveAvgPool2d((1, 1))
         self.dropout = Dropout(dropout_rate)
         self.fc = Linear(ENCODERS[encoder_name]['features'], n_classes)
 
@@ -55,6 +55,5 @@ class SignsClassifier(nn.Module):
         x = self.encoder.forward_features(x)
         x = self.avg_pool(x).flatten(1)
         x = self.dropout(x)
-        print(x.shape)
         x = self.fc(x)
         return x

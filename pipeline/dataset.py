@@ -1,7 +1,7 @@
 import os
 from typing import Callable, Dict, Mapping, Tuple, Optional, Union
 
-
+import torch
 import albumentations as albu
 import cv2
 import numpy as np
@@ -106,8 +106,6 @@ def training_augmentation(img_size: Tuple[int, int] = IMG_SIZE) -> Callable:
     train_transform = [
         albu.ImageCompression(quality_lower=60, quality_upper=100),
         albu.GaussNoise(p=0.1),
-        albu.augmentations.crops.transforms.CropAndPad(px=5),
-        albu.RandomBrightnessContrast(p=0.5),
         albu.Resize(img_size[0], img_size[1]),
     ]
     return albu.Compose(train_transform)
@@ -144,7 +142,10 @@ class SignDataset(Dataset):
         if self.transform is not None:
             img = self.transform(image=img)['image']
         img = preprocess_img(img)
-        return {'image': img, 'label': self.class2label[sign_class], 'sign_class': sign_class, 'fname': fname}
+        lbl = self.class2label[sign_class]
+        #label = torch.zeros([1,len(self.class2label)]).long()
+        #label[:,lbl] = 1
+        return {'image': img, 'label': lbl, 'sign_class': sign_class, 'fname': fname}
 
     def __len__(self) -> int:
         return len(self.df)

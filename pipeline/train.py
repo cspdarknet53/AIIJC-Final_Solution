@@ -94,7 +94,7 @@ def train_initialization(
     model = SignsClassifier(model_name, len(class2label))
     model.to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.RMSprop(model.parameters(), lr=1e-3)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     return model, class2label, exp_path, criterion, optimizer
 
 
@@ -143,7 +143,7 @@ def run_one_epoch(
         model.train()
     else:
         model.eval()
-    pbar = tqdm(enumerate(loader), total=len(loader), desc=f'Epoch {epoch} {["evaluat", "train"][is_train]}ing')
+    pbar = tqdm(enumerate(loader), total=len(loader), desc=f'Epoch {epoch} {["evaluate", "train"][is_train]}ing')
     with torch.set_grad_enabled(is_train):
         mean_loss = 0
         gt_labels = []
@@ -152,9 +152,7 @@ def run_one_epoch(
             images, labels = sample['image'], sample['label']
             images = images.to(device)
             predictions = model(images)
-
-            target = labels
-            target = target.to(device)
+            target = labels.to(device)
 
             loss = criterion(predictions, target)
             mean_loss += loss.item()
