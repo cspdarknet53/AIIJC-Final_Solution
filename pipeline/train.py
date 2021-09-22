@@ -16,7 +16,7 @@ from tqdm import tqdm
 from pipeline.constants import DEFAULT_EXPERIMENTS_SAVE_PATH, DEFAULT_DATA_PATH, SEED
 from pipeline.dataset import get_class2label, get_loaders
 from pipeline.models import SignsClassifier
-from pipeline.utils import set_global_seed, dump_to_json_file
+from pipeline.utils import set_global_seed, dump_to_json_file, load_json_file
 
 
 def parse_args() -> Namespace:
@@ -39,6 +39,7 @@ def train(
     n_epochs: int,
     batch_size: int,
     device: str,
+    data_path: str = None,
 ) -> Tuple[Dict[str, List[float]], Dict[str, List[float]]]:
     """Model training.
 
@@ -51,8 +52,14 @@ def train(
     :param device: device on which the calculations will be performed
     :return: training and validation metrics
     """
-    model, class2label, exp_path, criterion, optimizer = train_initialization(exp_name, model_name, device)
+    model, class2label, exp_path, criterion, optimizer = train_initialization(exp_name, model_name, device, data_path)
     best_f1 = -np.inf
+    if data_path:
+        sdict = torch.load(os.path.join(data_path, 'best.pth'))
+        best_f1 = sdict['f1']
+        ie = sdict['epoch']
+        model.load_state_dict(sdict['state_dict'])
+        optimizer.load_state_dict(sdict['optimizer_state_dict'])
     train_metrics, valid_metrics = defaultdict(list), defaultdict(list)
     train_loader, valid_loader = get_loaders(DEFAULT_DATA_PATH, batch_size, class2label, num_workers=6)
     for epoch in range(n_epochs):
@@ -80,6 +87,7 @@ def train_initialization(
     exp_name: str,
     model_name: str,
     device: str,
+    data_path: str = None,
 ) -> Tuple[nn.Module, Dict[str, int], str, nn.Module, torch.optim.Optimizer]:
     """Initializing the classes involved in the training.
 
@@ -90,7 +98,11 @@ def train_initialization(
     """
     prepare2train()
     class2label = get_class2label(DEFAULT_DATA_PATH)
-    exp_path = get_and_make_train_dir(exp_name, class2label)
+    if data_path is None:
+       exp_path = get_and_make_train_dir(exp_name, class2label)
+    else:
+       exp_path = os.path.join(DEFAULT_EXPERIMENTS_SAVE_PATH, exp_name)
+       class2label = load_json_file(os.path.join(exp_path, 'class2label.json'))
     model = SignsClassifier(model_name, len(class2label))
     model.to(device)
     criterion = nn.CrossEntropyLoss()
