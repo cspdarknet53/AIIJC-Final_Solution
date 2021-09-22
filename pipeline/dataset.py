@@ -105,7 +105,9 @@ def training_augmentation(img_size: Tuple[int, int] = IMG_SIZE) -> Callable:
     """
     train_transform = [
         albu.ImageCompression(quality_lower=60, quality_upper=100),
-        albu.GaussNoise(p=0.1),
+        albu.augmentations.transforms.OpticalDistortion(),
+        albu.augmentations.transforms.RandomBrightness(),
+        albu.augmentations.transforms.Blur(),
         albu.Resize(img_size[0], img_size[1]),
     ]
     return albu.Compose(train_transform)
@@ -138,7 +140,10 @@ class SignDataset(Dataset):
     def __getitem__(self, index: int) -> Dict[str, Union[str, np.ndarray, int]]:
         data_sample = self.df[index]
         fname, sign_class = data_sample['filename'], data_sample['label']
-        img = read_rgb_img(os.path.join(self.data_path, fname))
+        if "drive" not in fname:
+         img = read_rgb_img(os.path.join(self.data_path, fname))
+        else:
+         img = read_rgb_img(fname)
         if self.transform is not None:
             img = self.transform(image=img)['image']
         img = preprocess_img(img)
@@ -167,8 +172,10 @@ class SignTestDataset(Dataset):
 
     def __getitem__(self, index: int) -> Dict[str, Union[str, np.ndarray]]:
         fname = self.df[index]['filename']
-        img_path = os.path.join(self.data_path, fname)
-        img = read_rgb_img(img_path)
+        if "drive" not in fname:
+         img = read_rgb_img(os.path.join(self.data_path, fname))
+        else:
+         img = read_rgb_img(fname)
         img = validation_augmentation()(image=img)['image']
         return {'image': preprocess_img(img), 'fname': fname}
 
