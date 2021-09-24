@@ -104,9 +104,11 @@ def training_augmentation(img_size: Tuple[int, int] = IMG_SIZE) -> Callable:
     :return: training augmentation
     """
     train_transform = [
-        albu.ImageCompression(quality_lower=60, quality_upper=100),
+        albu.ImageCompression(quality_lower=60, quality_upper=100, always_apply=True),
         albu.augmentations.transforms.OpticalDistortion(),
-        albu.augmentations.transforms.RandomBrightness(),
+        albu.augmentations.transforms.ColorJitter(always_apply=True),
+        albu.augmentations.geometric.rotate.Rotate (limit=5),
+        albu.augmentations.transforms.RandomShadow (),
         albu.augmentations.transforms.Blur(),
         albu.Resize(img_size[0], img_size[1]),
     ]
