@@ -54,6 +54,7 @@ def train(
     """
     model, class2label, exp_path, criterion, optimizer = train_initialization(exp_name, model_name, device, data_path)
     best_f1 = -np.inf
+    ie = 0
     if data_path:
         sdict = torch.load(os.path.join(data_path, 'best.pth'))
         best_f1 = sdict['f1']
@@ -62,7 +63,7 @@ def train(
         optimizer.load_state_dict(sdict['optimizer_state_dict'])
     train_metrics, valid_metrics = defaultdict(list), defaultdict(list)
     train_loader, valid_loader = get_loaders(DEFAULT_DATA_PATH, batch_size, class2label, num_workers=6)
-    for epoch in range(n_epochs):
+    for epoch in range(ie, n_epochs):
         epoch_train_metrics = run_one_epoch(epoch, model, train_loader, optimizer, criterion, device, is_train=True)
         update_metrics_by_epoch_metrics(train_metrics, epoch_train_metrics)
         epoch_valid_metrics = run_one_epoch(epoch, model, valid_loader, optimizer, criterion, device, is_train=False)
