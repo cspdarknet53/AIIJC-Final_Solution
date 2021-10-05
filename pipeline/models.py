@@ -6,7 +6,7 @@ from torch.nn.modules.dropout import Dropout
 from torch.nn.modules.linear import Linear
 from torch.nn.modules.pooling import AdaptiveAvgPool2d
 from timm.models.resnet import resnet18, resnet34, resnet50
-from timm.models.efficientnet import efficientnet_b0
+from timm.models.efficientnet import efficientnet_b2
 
 ENCODERS = {
     'resnet18': {
@@ -22,8 +22,8 @@ ENCODERS = {
         'init_op': partial(resnet50, pretrained=True),
     },
     'efficientnet': {
-        'features': 1280,
-        'init_op': partial(efficientnet_b0, pretrained=True),
+        'features': 1408,
+        'init_op': partial(efficientnet_b2, pretrained=True),
     },
 }
 
