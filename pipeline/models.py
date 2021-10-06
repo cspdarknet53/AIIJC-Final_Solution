@@ -33,7 +33,7 @@ class SignsClassifier(nn.Module):
     A model for classifying signs.
     """
 
-    def __init__(self, encoder_name: str, n_classes: int, dropout_rate: float = 0.2):
+    def __init__(self, encoder_name: str, n_classes: int, dropout_rate: float = 0.0):
         """Initializing the class.
 
         :param encoder_name: name of the network encoder
