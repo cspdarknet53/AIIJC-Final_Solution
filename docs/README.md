@@ -13,7 +13,7 @@
 3. Загрузите датасет. По умолчанию считается, что датасет будет находиться в папке `data/` в
 этом же проекте. Если это не так, то поменяйте `DEFAULT_DATA_PATH` из `pipeline/constants.py`
 на нужный путь.
-4. Скачайте веса с https://drive.google.com/file/d/1rPQHBvp8w_F9Nrtbr1p6lAx__zCTMXAu/view?usp=sharing и поместите их в ./Web app/app
+4. Скачайте веса с /*здесь ссылка на веса*/ и поместите их в ./Web app/app
    
 ## Обучение нейросети
 
