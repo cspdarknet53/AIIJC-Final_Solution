@@ -15,6 +15,7 @@ Russian version: [README.md](docs/README.md)
 3. Download the data. By default, it is assumed that the dataset is located
    in the `data/` folder in the same project. If this is not the case, then change
    `DEFAULT_DATA_PATH` from `pipeline/constants.py` on the correct path.
+4. Download weights from https://drive.google.com/file/d/1rPQHBvp8w_F9Nrtbr1p6lAx__zCTMXAu/view?usp=sharing and put them into ./Web app/app .
    
 ## Neural network training
 
