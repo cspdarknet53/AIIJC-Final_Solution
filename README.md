@@ -3,7 +3,7 @@ Repository For Accessing Final Solution For Team Round Of AIIJC Contest.
 
 ## Solution
 - solution sources (source code) : Files For Training And Testing Files Source Code
-- aiijc code-demo.mp4 : Training/Testing Code Walkthrough
+- aiijc code-walkthrough.mp4 : Training/Testing Code Walkthrough
 
 ## Website
 - cspdarknet-website.zip : Python Files For Website (Web Design Not Included)
