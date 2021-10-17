@@ -67,6 +67,8 @@ def read_rgb_img(img_path: str) -> np.ndarray:
     :return: image in rgb format
     """
     img = cv2.imread(img_path)
+    if img is None:
+        print(img_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     return img
 
@@ -143,13 +145,13 @@ class SignDataset(Dataset):
         data_sample = self.df[index]
         fname, sign_class = data_sample['filename'], data_sample['label']
         if "drive" not in fname:
-         img = read_rgb_img(os.path.join(self.data_path, fname))
+            img = read_rgb_img(os.path.join(self.data_path, fname))
         else:
-         img = read_rgb_img(fname)
+            img = read_rgb_img(fname)
         if self.transform is not None:
             img = self.transform(image=img)['image']
         img = preprocess_img(img)
-        lbl = self.class2label[sign_class]
+        lbl = int(sign_class)
         #label = torch.zeros([1,len(self.class2label)]).long()
         #label[:,lbl] = 1
         return {'image': img, 'label': lbl, 'sign_class': sign_class, 'fname': fname}
@@ -175,9 +177,9 @@ class SignTestDataset(Dataset):
     def __getitem__(self, index: int) -> Dict[str, Union[str, np.ndarray]]:
         fname = self.df[index]['filename']
         if "drive" not in fname:
-         img = read_rgb_img(os.path.join(self.data_path, fname))
+            img = read_rgb_img(os.path.join(self.data_path, fname))
         else:
-         img = read_rgb_img(fname)
+            img = read_rgb_img(fname)
         img = validation_augmentation()(image=img)['image']
         return {'image': preprocess_img(img), 'fname': fname}
 
