@@ -4,6 +4,7 @@ Repository For Accessing Final Solution For Team Round Of AIIJC Contest.
 ## Solution
 - solution sources (source code) : Files For Training And Testing Files Source Code
 - aiijc code-walkthrough.mp4 : Training/Testing Code Walkthrough
+- Please, add class2label.json file to folder where checkpoint will be)
 
 ## Website
 - cspdarknet-website.zip : Python Files For Website (Web Design Not Included)
