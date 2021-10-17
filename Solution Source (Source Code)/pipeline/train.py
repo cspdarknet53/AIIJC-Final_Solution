@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import argparse
 import os
 import warnings
@@ -5,19 +6,21 @@ from argparse import Namespace
 from collections import defaultdict
 from typing import Dict, List, Tuple
 
+# +
 import cv2
 import numpy as np
 import torch
-from sklearn.metrics import f1_score
+
 from torch import nn
 from torch.utils.data import DataLoader
-from tqdm import tqdm
-
+from tqdm import tqdm_notebook as tqdm
 from pipeline.constants import DEFAULT_EXPERIMENTS_SAVE_PATH, DEFAULT_DATA_PATH, SEED
 from pipeline.dataset import get_class2label, get_loaders
 from pipeline.models import SignsClassifier
 from pipeline.utils import set_global_seed, dump_to_json_file, load_json_file
 
+
+# -
 
 def parse_args() -> Namespace:
     """Сommand line argument parser.
@@ -40,6 +43,7 @@ def train(
     batch_size: int,
     device: str,
     data_path: str = None,
+    ep: int = 0,
 ) -> Tuple[Dict[str, List[float]], Dict[str, List[float]]]:
     """Model training.
 
@@ -53,14 +57,16 @@ def train(
     :return: training and validation metrics
     """
     model, class2label, exp_path, criterion, optimizer = train_initialization(exp_name, model_name, device, data_path)
-    best_f1 = -np.inf
+    best_acc = -np.inf
     ie = 0
+    
     if data_path:
-        sdict = torch.load(os.path.join(data_path, 'best.pth'))
-        best_f1 = sdict['f1']
-        ie = sdict['epoch']
-        model.load_state_dict(sdict['state_dict'])
-        optimizer.load_state_dict(sdict['optimizer_state_dict'])
+        if os.path.exists(os.path.join(DEFAULT_EXPERIMENTS_SAVE_PATH, data_path, f'best{ep}.pth')):
+            sdict = torch.load(os.path.join(DEFAULT_EXPERIMENTS_SAVE_PATH, data_path, f'best{ep}.pth'))
+            best_acc = sdict['acc']
+            ie = sdict['epoch']
+            model.load_state_dict(sdict['state_dict'])
+            optimizer.load_state_dict(sdict['optimizer_state_dict'])
     train_metrics, valid_metrics = defaultdict(list), defaultdict(list)
     train_loader, valid_loader = get_loaders(DEFAULT_DATA_PATH, batch_size, class2label, num_workers=6)
     for epoch in range(ie, n_epochs):
@@ -68,17 +74,17 @@ def train(
         update_metrics_by_epoch_metrics(train_metrics, epoch_train_metrics)
         epoch_valid_metrics = run_one_epoch(epoch, model, valid_loader, optimizer, criterion, device, is_train=False)
         update_metrics_by_epoch_metrics(valid_metrics, epoch_valid_metrics)
-        curr_f1 = epoch_valid_metrics['f1']
-        if curr_f1 > best_f1:
-            best_f1 = curr_f1
+        curr_acc = epoch_valid_metrics['acc']
+        if curr_acc > best_acc:
+            best_acc = curr_acc
             torch.save(
                 {
                     'state_dict': model.state_dict(),
                     'epoch': epoch,
-                    'f1': best_f1,
+                    'acc': best_acc,
                     'optimizer_state_dict': optimizer.state_dict(),
                 },
-                os.path.join(exp_path, 'best.pth'),
+                os.path.join(exp_path, f'best{epoch}.pth'),
             )
             print('Model saved!')
     return train_metrics, valid_metrics
@@ -100,14 +106,14 @@ def train_initialization(
     prepare2train()
     class2label = get_class2label(DEFAULT_DATA_PATH)
     if data_path is None:
-       exp_path = get_and_make_train_dir(exp_name, class2label)
+        exp_path = get_and_make_train_dir(exp_name, class2label)
     else:
-       exp_path = os.path.join(DEFAULT_EXPERIMENTS_SAVE_PATH, exp_name)
-       class2label = load_json_file(os.path.join(exp_path, 'class2label.json'))
+        exp_path = os.path.join(DEFAULT_EXPERIMENTS_SAVE_PATH, exp_name)
+        class2label = load_json_file(os.path.join(exp_path, 'class2label.json'))
     model = SignsClassifier(model_name, len(class2label))
     model.to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    optimizer =torch.optim.Adam(model.parameters(), lr=1e-3)
     return model, class2label, exp_path, criterion, optimizer
 
 
@@ -159,6 +165,7 @@ def run_one_epoch(
     pbar = tqdm(enumerate(loader), total=len(loader), desc=f'Epoch {epoch} {["evaluate", "train"][is_train]}ing')
     with torch.set_grad_enabled(is_train):
         mean_loss = 0
+        mean_acc = 0.
         gt_labels = []
         pred_labels = []
         for num_batch, sample in pbar:
@@ -173,12 +180,13 @@ def run_one_epoch(
             labels = labels.numpy()
             pred_labels.extend(list(predictions))
             gt_labels.extend(list(labels))
+            mean_acc += (labels==predictions).mean()
             if is_train:
                 loss.backward()
                 optimizer.step()
                 optimizer.zero_grad()
 
-            bar_descr = {'loss': f'{mean_loss / (num_batch + 1):.6f}'}
+            bar_descr = {'loss': f'{mean_loss / (num_batch + 1):.6f}', 'acc': f'{mean_acc/(num_batch+1):.4f}'}
             pbar.set_postfix(**bar_descr)
 
             del loss, predictions, images, labels, target
@@ -186,9 +194,10 @@ def run_one_epoch(
 
     prefix = f'{["val", "train"][is_train]}'
     mean_loss /= len(loader)
-    f1 = f1_score(gt_labels, pred_labels, average='micro')
-    print(f'Epoch {epoch}: {prefix}_f1={f1:.4f}; {prefix}_loss={mean_loss:.6f}')
-    return {'f1': f1, 'loss': mean_loss}
+    mean_acc /= len(loader)
+    #f1 = f1_score(gt_labels, pred_labels, average='micro')
+    print(f'Epoch {epoch}: {prefix}_acc={mean_acc:.4f}; {prefix}_loss={mean_loss:.6f}')
+    return {'acc': mean_acc, 'loss': mean_loss}
 
 
 def update_metrics_by_epoch_metrics(metrics: Dict[str, List[float]], epoch_metrics: Dict[str, float]) -> None:
