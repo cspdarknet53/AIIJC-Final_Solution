@@ -28,6 +28,21 @@ def parse_args() -> Namespace:
 
 
 
+ def get_inference_model(model_name: str, checkpoint_path: str, class2label: dict, device: str) -> torch.nn.Module:
+    """Getting model for inference.
+
+    :param model_name: model name
+    :param checkpoint_path: path to the model weights
+    :param class2label: class to label dict
+    :param device: device on which the calculations will be performed
+    :return: model
+    """
+    state_dict = torch.load(checkpoint_path)['state_dict']
+    model = SignsClassifier(model_name, len(class2label))
+    model.load_state_dict(state_dict)
+    model.to(device)
+    model.eval()
+    return model
 
 def get_and_save_test_result(
     exp_name: str,
