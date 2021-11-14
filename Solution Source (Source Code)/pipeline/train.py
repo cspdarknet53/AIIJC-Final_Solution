@@ -56,7 +56,8 @@ def train(
     :param device: device on which the calculations will be performed
     :return: training and validation metrics
     """
-    model, class2label, exp_path, criterion, optimizer = train_initialization(exp_name, model_name, device, data_path)
+    model, class2label, exp_path, loss1, loss2, loss3, loss4, loss5, loss6, optimizer = train_initialization(exp_name, model_name, device, data_path)
+    losses = [loss1, loss2, loss3, loss4, loss5, loss6]
     best_acc = -np.inf
     ie = 0
     
@@ -70,9 +71,9 @@ def train(
     train_metrics, valid_metrics = defaultdict(list), defaultdict(list)
     train_loader, valid_loader = get_loaders(DEFAULT_DATA_PATH, batch_size, class2label, num_workers=6)
     for epoch in range(ie, n_epochs):
-        epoch_train_metrics = run_one_epoch(epoch, model, train_loader, optimizer, criterion, device, is_train=True)
+        epoch_train_metrics = run_one_epoch(epoch, model, train_loader, optimizer, losses, device, is_train=True)
         update_metrics_by_epoch_metrics(train_metrics, epoch_train_metrics)
-        epoch_valid_metrics = run_one_epoch(epoch, model, valid_loader, optimizer, criterion, device, is_train=False)
+        epoch_valid_metrics = run_one_epoch(epoch, model, valid_loader, optimizer, losses, device, is_train=False)
         update_metrics_by_epoch_metrics(valid_metrics, epoch_valid_metrics)
         curr_acc = epoch_valid_metrics['acc']
         if curr_acc > best_acc:
