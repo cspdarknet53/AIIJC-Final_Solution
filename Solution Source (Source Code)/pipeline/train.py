@@ -112,9 +112,10 @@ def train_initialization(
         class2label = load_json_file(os.path.join(exp_path, 'class2label.json'))
     model = SignsClassifier(model_name, len(class2label))
     model.to(device)
-    criterion = nn.CrossEntropyLoss()
+    loss1,loss2,loss3,loss4,loss5,loss6 = nn.NLLLoss(), nn.BCELoss(), nn.BCELoss(), nn.BCELoss(), nn.BCELoss(), nn.BCELoss()
+    
     optimizer =torch.optim.Adam(model.parameters(), lr=1e-3)
-    return model, class2label, exp_path, criterion, optimizer
+    return model, class2label, exp_path, loss1, loss2, loss3, loss4, loss5, loss6, optimizer
 
 
 def prepare2train() -> None:
@@ -143,7 +144,7 @@ def run_one_epoch(
     model: nn.Module,
     loader: DataLoader,
     optimizer: torch.optim.Optimizer,
-    criterion: nn.Module,
+    losses,
     device: str,
     is_train: bool = True,
 ) -> dict:
@@ -171,16 +172,37 @@ def run_one_epoch(
         for num_batch, sample in pbar:
             images, labels = sample['image'], sample['label']
             images = images.to(device)
-            predictions = model(images)
+            probs, o1, o2, o3, o4, o5 = model(images)
+           
             target = labels.to(device)
 
-            loss = criterion(predictions, target)
+            loss1 = losses[0](probs, target[:,0:5])
+            loss2 = losses[1](o1, target[:,5:11])
+            loss3 = losses[2](o2, target[:,11:17])
+            loss4 = losses[3](o3, target[:,17:23])
+            loss5 = losses[4](o4, target[:,23:29])
+            loss6 = losses[5](o5, target[:,29:35])
+            loss = loss1+loss2+loss3+loss4+loss5+loss6
             mean_loss += loss.item()
-            predictions = predictions.argmax(dim=-1).cpu().detach().numpy()
+            probs = probs.argmax(dim=-1).cpu().detach().numpy()
+            out = [o1.cpu().detach().numpy(),o2.cpu().detach().numpy(),o3.cpu().detach().numpy(),o4.cpu().detach().numpy(),o5.cpu().detach().numpy()]
+            for i in range(5):
+                out[i] = np.int64(out[i]>0.5)
             labels = labels.numpy()
-            pred_labels.extend(list(predictions))
-            gt_labels.extend(list(labels))
-            mean_acc += (labels==predictions).mean()
+            acc = 0.
+            for i in range(probs.shape[0]):
+                flag=1
+                tl = np.argmax(labels[i,0:5], dim=-1)[0]
+                if probs[i][0] == tl:
+                    for j in range(tl):
+                        if out[j] != labels[i, 5+6*tl:11+6*tl]:
+                            flag=0
+                            break
+                    acc += flag
+
+            #pred_labels.extend(list(predictions))
+            #gt_labels.extend(list(labels))
+            mean_acc += acc / probs.shape[0]
             if is_train:
                 loss.backward()
                 optimizer.step()
